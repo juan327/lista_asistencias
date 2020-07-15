@@ -1,0 +1,207 @@
+﻿@model lista_asistencias_merino_espinoza.Models.usuarios
+@{
+    ViewBag.Title = "Lista de usuarios";
+}
+    <br />
+    <button class="btn btn-success" onclick="agregar()">Agregar Usuario</button>
+    <hr/>
+    <div class="table-responsive">
+        <table id="tabla" class="table table-hover table-bordered" style="width: 100%">
+            <thead class="bg-secondary text-white">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Apellido</th>
+                    <th scope="col">Correo</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+
+@*Creando modal para agregar*@
+<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloModal"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("modificar", "Home", FormMethod.Post, new { @id = "formDatos" }))
+                {
+                    @Html.HiddenFor(m => m.id_usuario, new { @id = "id" })
+                    <div class="form-group">
+                        <label for="nombres">Nombre</label>
+                        @Html.TextBoxFor(m => m.nombres, new { @class = "form-control", @name = "nombres", @placeholder = "Nombre del usuario" })
+                    </div>
+                    <div class="form-group">
+                        <label for="apellidos">Apellidos</label>
+                        @Html.TextBoxFor(m => m.apellidos, new { @class = "form-control", @name = "nombres", @placeholder = "Apellido del usuario" })
+                    </div>
+                    <div class="form-group">
+                        <label for="correo">Correo</label>
+                        @Html.TextBoxFor(m => m.correo, new { @class = "form-control", @name = "correo", @placeholder = "Correo del usuario", @type = "email" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnRegistrar" class="btn btn-primary" onclick="btnRegistrar()">Registrar</button>
+                <button type="button" id="btnEditar" class="btn btn-primary" onclick="btnEditar()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js"></script>
+    <script src="~/Scripts/notify.min.js"></script>
+    
+    <script>
+        var Datatables;
+
+        Datatables = $('#tabla').DataTable({
+                "ajax": {
+                    "type": "GET",
+                    "url": '@Url.Action("listar", "Home")',
+                    "datatype": "JSON"
+                },
+                "columns": [
+                    { "data": "id_usuario" },
+                    { "data": "nombres" },
+                    { "data": "apellidos" },
+                    { "data": "correo" },
+                    {
+                        "data": "id_usuario", "render": function (data) {
+                            html = "<button onclick='editar(`" + data + "`)' type='button' class='btn btn-primary btn-sm'>Editar</button>";
+                            html += "<button onclick='eliminar(`" + data + "`)' type='button' class='btn btn-danger btn-sm'>Eliminar</button>";
+                            return html;
+                        }
+                    },
+                ]
+            });
+
+
+        function agregar() {
+            $("#id").val("");
+            $("#nombres").val("");
+            $("#apellidos").val("");
+            $("#correo").val("");
+
+            $("#tituloModal").html("Registrar");
+
+            $('#btnRegistrar').show();
+            $('#btnEditar').hide();
+
+            $('#modal').modal();
+        }
+
+        function btnRegistrar() {
+            if ($("#nombres").val() != "" && $("#apellidos").val() != "") {
+                var datos = $("#formDatos").serialize();
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("modificar", "Home")',
+                    data: datos,
+                    success: function (respuesta) {
+                        if (respuesta.result) {
+                            $('#modal').modal("hide");
+                            Datatables.ajax.reload();
+                            $.notify(respuesta.message, {
+                                globalPosition: 'top right',
+                                className: 'success'
+                            });
+                        }
+                    },
+                    error: function (msg) {
+                        alert(msg.responsetext);
+                    }
+                });
+            } else {
+                $.notify("Nombre y/o apellido no pueden estar vacios!", {
+                    globalPosition: 'top right',
+                    className: 'error'
+                });
+            }
+        }
+
+        function btnEditar() {
+            if ($("#id").val() != "" && $("#nombres").val() != "" && $("#apellidos").val() != "") {
+                var datos = $("#formDatos").serialize();
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("modificar", "Home")',
+                    data: datos,
+                    success: function (respuesta) {
+                        if (respuesta.result) {
+                            $('#modal').modal("hide");
+                            Datatables.ajax.reload();
+                            $.notify(respuesta.message, {
+                                globalPosition: 'top right',
+                                className: 'success'
+                            });
+                        }
+                    },
+                    error: function (msg) {
+                        alert(msg.responsetext);
+                    }
+                });
+            } else {
+                $.notify("Nombre y/o apellido no pueden estar vacios!", {
+                    globalPosition: 'top right',
+                    className: 'error'
+                });
+            }
+        }
+
+        function eliminar(id) {
+            if (confirm("Seguro que desea eliminar el registro?")) {
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("eliminar", "Home")' + id,
+                    datatype: "JSON",
+                    success: function (respuesta) {
+                        if (respuesta.result) {
+                            Datatables.ajax.reload();
+                            $.notify("Datos eliminados!", {
+                                globalPosition: 'top right',
+                                className: 'success',
+                            });
+                        }
+                    },
+                    error: function (msg) {
+                        alert(msg.responsetext);
+                    }
+                });
+            }
+        }
+
+        function editar(id, nombres, apellidos, correo) {
+            $.ajax({
+                type: "GET",
+                url: '@Url.Action("editar", "Home")' + id,
+                datatype: 'JSON',
+                success: function (respuesta) {
+                    $("#id").val(respuesta.id_usuario);
+                    $("#nombres").val(respuesta.nombres);
+                    $("#apellidos").val(respuesta.apellidos);
+                    $("#correo").val(respuesta.correo);
+                    $('#modal').modal();
+
+                    $("#tituloModal").html("Editar");
+
+                    $('#btnRegistrar').hide();
+                    $('#btnEditar').show();
+                },
+                error: function (msg) {
+                    alert(msg.responsetext);
+                }
+            });
+        }
+    </script>
+}

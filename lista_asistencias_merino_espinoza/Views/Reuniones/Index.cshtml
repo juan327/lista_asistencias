@@ -1,0 +1,203 @@
+﻿@model lista_asistencias_merino_espinoza.Models.reuniones
+@{
+    ViewBag.Title = "Lista de reuniones";
+}
+<br />
+<button class="btn btn-success" onclick="agregar()">Agregar Reunion</button>
+<hr />
+<div class="table-responsive">
+    <table id="tabla" class="table table-hover table-bordered" style="width: 100%">
+        <thead class="bg-secondary text-white">
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Nombre</th>
+                <th scope="col">Descripcion</th>
+                <th scope="col">fecha</th>
+                <th scope="col">Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+
+@*Creando modal para agregar*@
+<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloModal"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("modificar", "Reuniones", FormMethod.Post, new { @id = "formDatos" }))
+                {
+                    @Html.HiddenFor(m => m.id_reunion, new { @id = "id" })
+                    <div class="form-group">
+                        <label for="nombre">Nombre</label>
+                        @Html.TextBoxFor(m => m.nombre, new { @class = "form-control", @name = "nombre", @placeholder = "Nombre de la reunion" })
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcion">Descripcion</label>
+                        @Html.TextAreaFor(m => m.descripcion, new { @class = "form-control", @name = "descripcion", @placeholder = "Descripcion de la reunion", @rows = "6" })
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        @Html.TextBoxFor(m => m.fecha, new { @class = "form-control", @name = "fecha", @placeholder = "Fecha de la reunion", @type = "date" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnRegistrar" class="btn btn-primary" onclick="btnRegistrar()">Registrar</button>
+                <button type="button" id="btnEditar" class="btn btn-primary" onclick="btnEditar()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js"></script>
+    <script src="~/Scripts/notify.min.js"></script>
+
+    <script>
+        var Datatables;
+
+        Datatables = $('#tabla').DataTable({
+                "ajax": {
+                    "type": "GET",
+                    "url": '@Url.Action("listar", "Reuniones")',
+                    "datatype": "JSON"
+                },
+                "columns": [
+                    { "data": "id_reunion" },
+                    { "data": "nombre" },
+                    { "data": "descripcion" },
+                    { "data": "fecha" },
+                    {
+                        "data": "id_reunion", "render": function (data) {
+                            html = "<button onclick='editar(" + data + ")' type='button' class='btn btn-primary btn-sm'>Editar</button>";
+                            html += "<button onclick='eliminar(" + data + ")' type='button' class='btn btn-danger btn-sm'>Eliminar</button>";
+                            return html;
+                        }
+                    },
+                ]
+            });
+
+
+        function agregar() {
+            $("#id").val("");
+            $("#nombre").val("");
+            $("#descripcion").val("");
+            $("#fecha").val("");
+
+            $('#btnRegistrar').show();
+            $('#btnEditar').hide();
+
+            $("#tituloModal").html("Registrar");
+
+            $('#modal').modal();
+        }
+
+        function btnRegistrar() {
+            if ($("#nombre").val() != "" && $("#fecha").val() != "") {
+                var datos = $("#formDatos").serialize();
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("modificar", "Reuniones")',
+                    data: datos,
+                    success: function (respuesta) {
+                        if (respuesta.result) {
+                            $('#modal').modal("hide");
+                            Datatables.ajax.reload();
+                            $.notify(respuesta.message, {
+                                globalPosition: 'top right',
+                                className: 'success'
+                            });
+                        }
+                    },
+                    error: function (msg) {
+                        alert(msg.responsetext);
+                    }
+                });
+            } else {
+                $.notify("Nombre y/o fecha no pueden estar vacios!", {
+                    globalPosition: 'top right',
+                    className: 'error'
+                });
+            }
+        }
+
+        function btnEditar() {
+            
+            if ($("#id").val() != "" && $("#nombre").val() != "" && $("#fecha").val() != "") {
+                var datos = $("#formDatos").serialize();
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("modificar", "Reuniones")',
+                    data: datos,
+                    success: function (respuesta) {
+                        if (respuesta.result) {
+                            $('#modal').modal("hide");
+                            Datatables.ajax.reload();
+                            $.notify(respuesta.message, {
+                                globalPosition: 'top right',
+                                className: 'success'
+                            });
+                        }
+                    },
+                    error: function (msg) {
+                        alert(msg.responsetext);
+                    }
+                });
+            }
+        }
+
+        function eliminar(id) {
+            if (confirm("Seguro que desea eliminar el registro?")) {
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("eliminar", "Reuniones")' + id,
+                    datatype: "JSON",
+                    success: function (respuesta) {
+                        if (respuesta.result) {
+                            Datatables.ajax.reload();
+                            $.notify("Datos eliminados!", {
+                                globalPosition: 'top right',
+                                className: 'success',
+                            });
+                        }
+                    },
+                    error: function (msg) {
+                        alert(msg.responsetext);
+                    }
+                });
+            }
+        }
+
+        function editar(id) {
+            $.ajax({
+                type: "GET",
+                url: '@Url.Action("editar", "Reuniones")' + id,
+                datatype: 'JSON',
+                success: function (respuesta) {
+                    $("#id").val(respuesta.id_reunion);
+                    $("#nombre").val(respuesta.nombre);
+                    $("#descripcion").val(respuesta.descripcion);
+                    $("#fecha").val(respuesta.fecha);
+                    $('#modal').modal();
+
+                    $("#tituloModal").html("Editar");
+
+                    $('#btnRegistrar').hide();
+                    $('#btnEditar').show();
+                },
+                error: function (msg) {
+                    alert(msg.responsetext);
+                }
+            });
+        }
+    </script>
+}

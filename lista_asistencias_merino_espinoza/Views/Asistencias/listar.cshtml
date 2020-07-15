@@ -1,0 +1,25 @@
+﻿@model List<lista_asistencias_merino_espinoza.Models.usuarios>
+@{
+    Layout = null;
+}
+@if (Model.Count >= 1)
+{
+    foreach (var m in Model)
+    {
+        <tr>
+            <td>@m.id_usuario</td>
+            <td>@m.nombres</td>
+            <td>@m.apellidos</td>
+            <td>@m.correo</td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="eliminar('@m.id_usuario')">Eliminar</button>
+            </td>
+        </tr>
+    }
+} else
+{
+    <tr>
+        <td colspan="6" class="text-center">No se ha encontrado datos...</td>
+    </tr>
+}
+

@@ -1,0 +1,9 @@
+﻿@model List<lista_asistencias_merino_espinoza.Models.usuarios>
+@{
+    Layout = null;
+}
+<option value="0">Selecciona un usuario</option>
+@foreach (var m in Model)
+{
+    <option value="@m.id_usuario">@m.nombres @m.apellidos</option>
+}
